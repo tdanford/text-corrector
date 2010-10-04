@@ -1,0 +1,10 @@
+
+( aa-rule-1 
+	"[aA]\.?[aA]\.?" 
+	"aa" 
+	"Normalizes amino-acid abbreviation." )
+
+( terminus-rule-1 
+	"([CNcn])[-\s](?:(?:TERM)|(?:Term)|(?:term))\.?"
+	"$1-terminus"
+	"Normalizes N/C-terminus notation.")
