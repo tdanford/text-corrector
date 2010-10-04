@@ -7,13 +7,12 @@
 	<property name="dist" location="dist"/>
 	<property name="docs" locatoin="${dist}/docs" />
 	<property name="lib"  location="lib"/>
-	<property name="data"  location="${dist}/data"/>
+	<property name="rules"  location="rules"/>
 	<property name="project" value="text-corrector"/>
 
 	<target name="init">
 		<tstamp/>
 		<mkdir dir="${build}"/>
-		<mkdir dir="${data}"/>
 	</target>
 
 	<target name="docs" depends="init" description="builds documentation" >
@@ -60,6 +59,5 @@
 	<target name="clean" description="clean up" >
 		<delete dir="${build}"/>
 		<delete dir="${dist}"/>
-		<delete dir="${data}"/>
 	</target>
 </project>
