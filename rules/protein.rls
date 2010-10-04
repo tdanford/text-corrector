@@ -5,6 +5,7 @@
 	"Normalizes amino-acid abbreviation." )
 
 ( terminus-rule-1 
-	"([CNcn])[-\s](?:(?:TERM)|(?:Term)|(?:term))\.?"
+	"([CNcn])[-\s](?:(?:TERM)|(?:Term)|(?:term))(?:(?:inal)|\.)?"
 	"$1-terminus"
 	"Normalizes N/C-terminus notation.")
+

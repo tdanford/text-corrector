@@ -23,6 +23,5 @@ public class RuleTest {
 		String s3 = "C-Term aa. 4300";
 		String s4 = "C-terminus aa 4300";
 		assertEquals(rules.rewrite(s3), s4);
-	}
-	
+	}	
 }
