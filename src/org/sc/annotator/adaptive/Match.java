@@ -1,6 +1,20 @@
 package org.sc.annotator.adaptive;
 
+import java.util.Collection;
+
 public class Match {
+	
+	public static Context lubContext(Collection<Match> ms) { 
+		Context c = null;
+		for(Match m : ms) { 
+			if(c == null) { 
+				c = m.context();
+			} else { 
+				c = c.leastUpperBound(m.context());
+			}
+		}
+		return c;
+	}
 	
 	private Context context;
 	private String match;
@@ -23,7 +37,7 @@ public class Match {
 	public String value() { return value; }
 	
 	public String toString() { 
-		return String.format("\"%s\" -> %s (%s)", 
+		return String.format("\"%s\"->\"%s\"@[%s]", 
 				match, value, context.toString());
 	}
 	
