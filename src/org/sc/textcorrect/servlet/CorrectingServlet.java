@@ -19,8 +19,14 @@ public class CorrectingServlet extends HttpServlet {
 		rules = rf;
 	}
 
-	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException { 
-		String text = URLDecoder.decode(request.getParameter("text"), "UTF-8");
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		String text = request.getParameter("text");
+		if(text == null) { 
+			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No 'text' parameter supplied.");
+			return;
+		}
+		
+		text = URLDecoder.decode(request.getParameter("text"), "UTF-8");
 		String corrected = rules.rewrite(text);
 		
 		response.setStatus(HttpServletResponse.SC_OK);
