@@ -18,7 +18,7 @@ public class WebClient implements AdaptiveMatcher {
 		base = b;
 	}
 
-	public Collection<Match> findMatches(Context c, String blockText) {
+	public Collection<Match> findMatches(Context c, String blockText) throws MatcherException {
 		try {
 			URL url = new URL(String.format("%s?context=%s&text=%s",
 					base, 
@@ -43,21 +43,24 @@ public class WebClient implements AdaptiveMatcher {
 				reader.close();
 				
 			} else { 
-				System.err.println(String.format("%d : %s", status, cxn.getResponseMessage()));
+				String msg = String.format("%d : %s", status, cxn.getResponseMessage());
+				throw new MatcherException(msg);
 			}
 			
 			return matches;
 			
 		} catch (MalformedURLException e) {
 			throw new IllegalArgumentException(e);
+		
 		} catch (UnsupportedEncodingException e) {
 			throw new IllegalStateException(e);
+			
 		} catch (IOException e) {
-			throw new IllegalStateException(e);
+			throw new MatcherException(e);
 		}
 	}
 
-	public Context registerMatch(Match m) {
+	public Context registerMatch(Match m) throws MatcherException {
 		try {
 			URL url = new URL(base);
 
@@ -87,17 +90,20 @@ public class WebClient implements AdaptiveMatcher {
 				reader.close();
 				
 			} else { 
-				System.err.println(String.format("%d : %s", status, cxn.getResponseMessage()));
+				String msg = String.format("%d : %s", status, cxn.getResponseMessage());
+				throw new MatcherException(msg);
 			}
 			
 			return matched;
 			
 		} catch (MalformedURLException e) {
 			throw new IllegalArgumentException(e);
+			
 		} catch (UnsupportedEncodingException e) {
 			throw new IllegalStateException(e);
+			
 		} catch (IOException e) {
-			throw new IllegalStateException(e);
+			throw new MatcherException(e);
 		}
 
 	}
