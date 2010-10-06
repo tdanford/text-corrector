@@ -13,14 +13,34 @@ import javax.servlet.http.HttpServletResponse;
 import org.sc.annotator.adaptive.AdaptiveMatcher;
 import org.sc.annotator.adaptive.Context;
 import org.sc.annotator.adaptive.Match;
+import org.sc.annotator.adaptive.exceptions.MatcherCloseException;
 import org.sc.annotator.adaptive.exceptions.MatcherException;
+import org.slf4j.Logger;
 
 public class AdaptiveMatchingServlet extends HttpServlet {
 	
 	private AdaptiveMatcher matcher;
 	
-	public AdaptiveMatchingServlet(AdaptiveMatcher matcher) {
+	private Logger logger;
+	
+	public AdaptiveMatchingServlet(AdaptiveMatcher matcher, Logger logging) {
 		this.matcher = matcher;
+		logger = logging;
+	}
+	
+	public void init() throws ServletException { 
+		super.init();
+		
+		logger.info("AdaptiveMatchingServlet initialized.");
+	}
+	
+	public void destroy() { 
+		super.destroy();
+		try {
+			matcher.close();
+		} catch (MatcherCloseException e) {
+			logger.warn("AdaptiveMatchingServlet.destroy", e);
+		}
 	}
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
