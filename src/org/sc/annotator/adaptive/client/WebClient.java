@@ -77,7 +77,6 @@ public class WebClient implements AdaptiveMatcher {
 			ps.print(String.format("context=%s", URLEncoder.encode(m.context().toString(), "UTF-8")));
 			ps.print(String.format("&text=%s", URLEncoder.encode(m.match(), "UTF-8")));
 			ps.print(String.format("&value=%s", URLEncoder.encode(m.value(), "UTF-8")));
-			ps.println();
 			
 			cxn.connect();
 			
