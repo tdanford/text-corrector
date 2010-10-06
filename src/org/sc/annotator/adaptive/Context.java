@@ -81,4 +81,9 @@ public class Context implements Comparable<Context> {
 		if(address.length > c.address.length) { return 1; }
 		return 0;
 	}
+
+	public boolean isParentOf(Context context) {
+		if(context.address.length != address.length + 1) { return false; }
+		return context.isSubContext(this);
+	}
 }
