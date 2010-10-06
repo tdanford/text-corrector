@@ -11,7 +11,7 @@ import java.util.TreeMap;
 import java.io.*;
 
 import org.sc.annotator.adaptive.exceptions.MatcherCloseException;
-import org.sc.annotator.adaptive.exceptions.MatcherException;
+import org.slf4j.Logger;
 
 /**
  * Implements an {@link AdaptiveMatcher} that is persistent by 
@@ -22,10 +22,19 @@ import org.sc.annotator.adaptive.exceptions.MatcherException;
  */
 public class SimpleFileAdaptiveMatcher implements AdaptiveMatcher {
 	
-	private Map<String,Set<Match>> matches;
+	private SimpleInMemoryAdaptiveMatcher matcher;
 	private File backingFile;
+	private Logger logger;
 	
-	public SimpleFileAdaptiveMatcher(File f) throws IOException {
+	/**
+	 * Creates a new adaptive matcher, out of the given backing file.  
+	 * 
+	 * @param f The name of the file, which need not exist at the moment this constructor is called.  
+	 * @param logger An SLF4J {@link Logger} object, used to output debugging messages.
+	 * @throws IOException If the file is a directory, or is not writable.
+	 */
+	public SimpleFileAdaptiveMatcher(File f, Logger logger) throws IOException {
+		this.logger = logger;
 		backingFile = f;
 		if(f.isDirectory()) { 
 			throw new IllegalArgumentException(f.getAbsolutePath() + " is a directory.");
@@ -33,7 +42,7 @@ public class SimpleFileAdaptiveMatcher implements AdaptiveMatcher {
 		if(f.exists() && !f.canWrite()) { 
 			throw new IllegalArgumentException(f.getAbsolutePath() + " is not writable.");
 		}
-		matches = new TreeMap<String,Set<Match>>();
+		matcher = new SimpleInMemoryAdaptiveMatcher(logger);
 		
 		reload();
 	}
@@ -42,65 +51,56 @@ public class SimpleFileAdaptiveMatcher implements AdaptiveMatcher {
 	 * @inheritDoc
 	 */
 	public Collection<Match> findMatches(Context c, String blockText) {
-		LinkedList<Match> ms = new LinkedList<Match>();
-		
-		for(String k : matches.keySet()) { 
-			
-			if(blockText.contains(k)) { 
-			
-				for(Match m : matches.get(k)) { 
-				
-					Context lub = c.leastUpperBound(m.context());
-					Match nm = new Match(lub, m);
-					ms.add(nm);
-				}
-			}
-		}
-		
-		return ms;
+		Collection<Match> matches = matcher.findMatches(c, blockText);
+		return matches;
 	}
 
+	/**
+	 * @inheritDoc
+	 */
 	public Context registerMatch(Match m) {
-		String matchText = m.match();
-		if(!matches.containsKey(matchText)) { matches.put(matchText, new LinkedHashSet<Match>()); }
+		logger.debug(String.format("registerMatch(%s)", m.toString()));
+		
+		Context c = matcher.registerMatch(m);
+		
+		logger.debug(String.format("registerMatch() returning: %s", c.toString()));
 
-		Iterator<Match> itr = matches.get(matchText).iterator();
-		
-		while(itr.hasNext()) { 
-			Match extant = itr.next();
-			
-			if(extant.value().equals(m.value())) { 
-				itr.remove();
-				Context lub = m.context().leastUpperBound(extant.context());
-				Match lubMatch = new Match(lub, matchText, m.value());
-				m = lubMatch;
-			}
-		}
-		
-		matches.get(matchText).add(m);
-		
-		return m.context();
+		return c;
 	}
 	
-	public void reload() throws IOException { 
-		BufferedReader reader = new BufferedReader(new FileReader(backingFile));
-		String line;
-		matches.clear();
-		while((line = reader.readLine()) != null) { 
-			String[] array = line.split("\t");
-			String match = array[0];
-			String value = array[1];
-			String context = array[2];
-			Match m = new Match(new Context(context), match, value);
-			if(!matches.containsKey(match)) { 
-				matches.put(match, new LinkedHashSet<Match>());
+	/**
+	 * Clears the internal state of the matcher, and replaces it with the matches read from the backing file.
+	 * 
+	 * @throws IOException If the backing file cannot be read, or another I/O error occurs.
+	 */
+	public void reload() throws IOException {
+		logger.info(String.format("Opening: %s", backingFile.getAbsolutePath()));
+
+		matcher.clear();
+		if(backingFile.exists()) { 
+			BufferedReader reader = new BufferedReader(new FileReader(backingFile));
+			String line;
+			while((line = reader.readLine()) != null) { 
+				String[] array = line.split("\t");
+				String match = array[0];
+				String value = array[1];
+				String context = array[2];
+				Match m = new Match(new Context(context), match, value);
+				matcher.addMatch(m);
 			}
-			matches.get(match).add(m);
+			reader.close();
 		}
-		reader.close();
 	}
 	
-	public void save(PrintWriter writer) { 
+	/**
+	 * Writes the matches which have been accumulated out to an underlying writer.
+	 * 
+	 * The {@link close} method will call this, with a writer created from the underlying backing file.
+	 * 
+	 * @param writer
+	 */
+	public void save(PrintWriter writer) {
+		Map<String,Set<Match>> matches = matcher.getMatches();
 		for(String match : matches.keySet()) { 
 			for(Match m : matches.get(match)) { 
 				writer.println(String.format("%s\t%s\t%s", 
@@ -111,9 +111,13 @@ public class SimpleFileAdaptiveMatcher implements AdaptiveMatcher {
 		}
 	}
 
+	/**
+	 * @inheritDoc
+	 */
 	public void close() throws MatcherCloseException {
 		PrintWriter writer = null;
-		try { 
+		try {
+			logger.info(String.format("Saving to %s", backingFile.getAbsolutePath()));
 			writer = new PrintWriter(new FileWriter(backingFile));
 			save(writer);
 			
