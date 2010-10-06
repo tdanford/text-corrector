@@ -8,11 +8,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import org.sc.annotator.adaptive.exceptions.MatcherCloseException;
+import org.sc.annotator.adaptive.exceptions.MatcherException;
+
 public interface AdaptiveMatcher {
 
-	public Collection<Match> findMatches(Context c, String blockText);
+	public Collection<Match> findMatches(Context c, String blockText) throws MatcherException;
 
-	public Context registerMatch(Match m);
-	
+	public Context registerMatch(Match m) throws MatcherException;
+
+	public void close() throws MatcherCloseException;
 }
 

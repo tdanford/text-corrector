@@ -8,6 +8,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import org.sc.annotator.adaptive.exceptions.MatcherCloseException;
+import org.sc.annotator.adaptive.exceptions.MatcherException;
+
 public class SimpleInMemoryAdaptiveMatcher implements AdaptiveMatcher {
 	
 	private Map<String,Set<Match>> matches;
@@ -55,6 +58,9 @@ public class SimpleInMemoryAdaptiveMatcher implements AdaptiveMatcher {
 		matches.get(matchText).add(m);
 		
 		return m.context();
+	}
+
+	public void close() throws MatcherCloseException {
 	} 
 	
 }

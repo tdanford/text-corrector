@@ -13,6 +13,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.sc.annotator.adaptive.AdaptiveMatcher;
 import org.sc.annotator.adaptive.Context;
 import org.sc.annotator.adaptive.Match;
+import org.sc.annotator.adaptive.exceptions.MatcherException;
 
 public class AdaptiveMatchingServlet extends HttpServlet {
 	
@@ -38,14 +39,22 @@ public class AdaptiveMatchingServlet extends HttpServlet {
 		context = URLDecoder.decode(context, "UTF-8");
 		
 		Context c = new Context(context);
-		Collection<Match> matches = matcher.findMatches(c, text);
+		Collection<Match> matches;
+		try {
+			matches = matcher.findMatches(c, text);
+
+			response.setStatus(HttpServletResponse.SC_OK);
+			response.setContentType("text");
+			PrintWriter pw = response.getWriter();
+			for(Match m : matches) { 
+				pw.println(m.value());
+			}
 		
-		response.setStatus(HttpServletResponse.SC_OK);
-		response.setContentType("text");
-		PrintWriter pw = response.getWriter();
-		for(Match m : matches) { 
-			pw.println(m.value());
+		} catch (MatcherException e) {
+			
+			response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
 		}
+		
 	}
 
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -70,11 +79,17 @@ public class AdaptiveMatchingServlet extends HttpServlet {
 		value = URLDecoder.decode(value, "UTF-8");
 
 		Match m = new Match(new Context(context), text, value);
-		
-		Context c = matcher.registerMatch(m);
-		
-		response.setStatus(HttpServletResponse.SC_OK);
-		response.setContentType("text");
-		response.getWriter().println(c.toString());
+
+		try { 
+			Context c = matcher.registerMatch(m);
+
+			response.setStatus(HttpServletResponse.SC_OK);
+			response.setContentType("text");
+			response.getWriter().println(c.toString());
+
+		} catch(MatcherException e) { 
+
+			response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+		}
 	}
 }

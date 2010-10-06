@@ -7,6 +7,8 @@ import java.io.*;
 import org.sc.annotator.adaptive.AdaptiveMatcher;
 import org.sc.annotator.adaptive.Context;
 import org.sc.annotator.adaptive.Match;
+import org.sc.annotator.adaptive.exceptions.MatcherCloseException;
+import org.sc.annotator.adaptive.exceptions.MatcherException;
 
 public class WebClient implements AdaptiveMatcher {
 	
@@ -100,5 +102,6 @@ public class WebClient implements AdaptiveMatcher {
 
 	}
 
-	
+	public void close() throws MatcherCloseException {
+	}
 }
