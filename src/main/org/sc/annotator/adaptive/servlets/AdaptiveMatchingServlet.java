@@ -1,6 +1,7 @@
 package org.sc.annotator.adaptive.servlets;
 
 import java.io.IOException;
+
 import java.io.PrintWriter;
 import java.net.URLDecoder;
 import java.util.Collection;
@@ -16,12 +17,22 @@ import org.sc.annotator.adaptive.Match;
 import org.sc.annotator.adaptive.exceptions.MatcherCloseException;
 import org.sc.annotator.adaptive.exceptions.MatcherException;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+/**
+ * Maps <tt>GET</tt> to the {@link AdaptiveMatcher#findMatches(Context, String) findMatches} method, and <tt>POST</tt> to the 
+ * {@link AdaptiveMatcher#registerMatch(Match) registerMatch} method.
+ * 
+ * @author Timothy Danford
+ */
 public class AdaptiveMatchingServlet extends HttpServlet {
 	
 	private AdaptiveMatcher matcher;
-	
 	private Logger logger;
+	
+	public AdaptiveMatchingServlet(AdaptiveMatcher matcher) { 
+		this(matcher, LoggerFactory.getLogger("AdaptiveMatchingServlet"));
+	}
 	
 	public AdaptiveMatchingServlet(AdaptiveMatcher matcher, Logger logging) {
 		this.matcher = matcher;
@@ -49,6 +60,7 @@ public class AdaptiveMatchingServlet extends HttpServlet {
 			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No 'text' parameter supplied.");
 			return;
 		}
+
 		String context = request.getParameter("context");
 		if(context == null) { 
 			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No 'context' parameter supplied.");
@@ -57,6 +69,8 @@ public class AdaptiveMatchingServlet extends HttpServlet {
 		
 		text = URLDecoder.decode(text, "UTF-8");
 		context = URLDecoder.decode(context, "UTF-8");
+		
+		logger.info(String.format("GET text=\"%s\", context=\"%s\"", text, context));
 		
 		Context c = new Context(context);
 		Collection<Match> matches;
@@ -68,6 +82,7 @@ public class AdaptiveMatchingServlet extends HttpServlet {
 			PrintWriter pw = response.getWriter();
 			for(Match m : matches) { 
 				pw.println(m.value());
+				logger.info(String.format("doGet() : %s", m.toString()));
 			}
 		
 		} catch (MatcherException e) {
@@ -97,11 +112,15 @@ public class AdaptiveMatchingServlet extends HttpServlet {
 		text = URLDecoder.decode(text, "UTF-8");
 		context = URLDecoder.decode(context, "UTF-8");
 		value = URLDecoder.decode(value, "UTF-8");
+		
+		logger.info(String.format("POST: text=\"%s\",context=\"%s\",value=\"%s\"", text, context, value));
 
 		Match m = new Match(new Context(context), text, value);
 
 		try { 
 			Context c = matcher.registerMatch(m);
+			
+			logger.info(String.format("doPost() : %s", c.toString()));
 
 			response.setStatus(HttpServletResponse.SC_OK);
 			response.setContentType("text");
