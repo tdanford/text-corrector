@@ -18,6 +18,9 @@
 	<target name="docs" depends="init" description="builds documentation" >
 		<mkdir dir="${docs}" />
 		<javadoc sourcepath="${src}" destdir="${docs}" >
+			<link href="http://download.oracle.com/docs/cd/E17802_01/products/products/servlet/2.2/javadoc/" />
+			<link href="http://download.oracle.com/javase/6/docs/api/" />
+			<link href="http://www.slf4j.org/apidocs/" />
 			<classpath>
 				<fileset dir="${lib}">
 					<include name="**/*.jar"/>
