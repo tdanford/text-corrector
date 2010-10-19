@@ -37,7 +37,7 @@ public class Match {
 	public String value() { return value; }
 	
 	public String toString() { 
-		return String.format("\"%s\"->\"%s\"@[%s]", 
+		return String.format("\"%s\"->\"%s\"@%s", 
 				match, value, context.toString());
 	}
 	

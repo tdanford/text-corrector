@@ -40,7 +40,7 @@ public class Context implements Comparable<Context> {
 			if(sb.length() > 0) { sb.append(" "); }
 			sb.append(a);
 		}
-		return sb.toString();
+		return String.format("[%s]", sb.toString());
 	}
 	
 	public int hashCode() { 
