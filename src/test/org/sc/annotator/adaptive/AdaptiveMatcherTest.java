@@ -1,4 +1,4 @@
-package org.sc.annotator.adaptive.test;
+package org.sc.annotator.adaptive;
 
 import java.io.File;
 import java.io.IOException;

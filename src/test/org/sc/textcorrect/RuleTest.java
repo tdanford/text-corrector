@@ -1,4 +1,4 @@
-package org.sc.textcorrect.test;
+package org.sc.textcorrect;
 
 import java.io.File;
 import java.io.IOException;
