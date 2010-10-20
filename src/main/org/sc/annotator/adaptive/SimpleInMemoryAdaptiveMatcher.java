@@ -12,6 +12,7 @@ import java.util.TreeMap;
 import org.sc.annotator.adaptive.exceptions.MatcherCloseException;
 import org.sc.annotator.adaptive.exceptions.MatcherException;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SimpleInMemoryAdaptiveMatcher implements AdaptiveMatcher {
 	
@@ -22,7 +23,10 @@ public class SimpleInMemoryAdaptiveMatcher implements AdaptiveMatcher {
 	public SimpleInMemoryAdaptiveMatcher(Logger logger) {
 		this.logger = logger;
 		matches = new TreeMap<String,Set<Match>>();
-		
+	}
+	
+	public SimpleInMemoryAdaptiveMatcher() { 
+		this(LoggerFactory.getLogger(SimpleInMemoryAdaptiveMatcher.class.getSimpleName()));
 	}
 	
 	/**
@@ -94,7 +98,10 @@ public class SimpleInMemoryAdaptiveMatcher implements AdaptiveMatcher {
 		logger.info(String.format("registerMatch(%s)", m.toString()));
 		
 		String matchText = m.match();
-		Iterator<Match> itr = matches.get(matchText).iterator();
+		
+		Iterator<Match> itr = matches.containsKey(matchText) ? 
+				matches.get(matchText).iterator() : 
+				new EmptyIterator<Match>();
 		
 		Match superMatch = null;
 		Set<Match> subMatches = new HashSet<Match>();
