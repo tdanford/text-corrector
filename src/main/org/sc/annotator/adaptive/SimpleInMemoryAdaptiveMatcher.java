@@ -42,6 +42,35 @@ public class SimpleInMemoryAdaptiveMatcher implements AdaptiveMatcher {
 		matches.clear();
 	}
 	
+	public void unregisterMatch(Match m) throws MatcherException { 
+		String source = m.value();
+		Context ctxt = m.context();
+		
+		if(matches.containsKey(source)) { 
+			Set<Match> ms = matches.get(source);
+			Iterator<Match> itr = ms.iterator();
+			int found = 0, removed = 0;
+			
+			while(itr.hasNext()) { 
+				Match extant = itr.next();
+				Context extC = extant.context();
+				if(extC.isSubContext(ctxt)) { 
+					itr.remove();
+					removed += 1;
+				}
+				found += 1;
+			}
+			
+			if(found==0) { 
+				throw new MatcherException(String.format("No source string \"%s\" in context %s",
+						source, ctxt.toString()));
+			}
+		} else { 
+			throw new MatcherException(String.format("No source string \"%s\"",
+					source));
+		}
+	}
+	
 	public void addMatch(Match m) { 
 		if(!matches.containsKey(m.match())) { 
 			matches.put(m.match(), new LinkedHashSet<Match>());

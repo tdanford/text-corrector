@@ -59,6 +59,42 @@ public class WebClient implements AdaptiveMatcher {
 			throw new MatcherException(e);
 		}
 	}
+	
+	public void unregisterMatch(Match m) throws MatcherException { 
+		try {
+			URL url = new URL(base);
+
+			HttpURLConnection cxn = (HttpURLConnection)url.openConnection();
+			cxn.setRequestMethod("DELETE");
+			
+			OutputStream os = cxn.getOutputStream();
+			PrintStream ps = new PrintStream(os);
+			
+			ps.print(String.format("context=%s", URLEncoder.encode(m.context().toString(), "UTF-8")));
+			ps.print(String.format("&text=%s", URLEncoder.encode(m.match(), "UTF-8")));
+			ps.print(String.format("&value=%s", URLEncoder.encode(m.value(), "UTF-8")));
+			
+			cxn.connect();
+			
+			int status = cxn.getResponseCode();
+			if(status == 200) { 
+				// do nothing.
+				
+			} else { 
+				String msg = String.format("%d : %s", status, cxn.getResponseMessage());
+				throw new MatcherException(msg);
+			}
+			
+		} catch (MalformedURLException e) {
+			throw new IllegalArgumentException(e);
+			
+		} catch (UnsupportedEncodingException e) {
+			throw new IllegalStateException(e);
+			
+		} catch (IOException e) {
+			throw new MatcherException(e);
+		}
+	}
 
 	public Context registerMatch(Match m) throws MatcherException {
 		try {

@@ -11,6 +11,7 @@ import java.util.TreeMap;
 import java.io.*;
 
 import org.sc.annotator.adaptive.exceptions.MatcherCloseException;
+import org.sc.annotator.adaptive.exceptions.MatcherException;
 import org.slf4j.Logger;
 
 /**
@@ -66,6 +67,10 @@ public class SimpleFileAdaptiveMatcher implements AdaptiveMatcher {
 		logger.debug(String.format("registerMatch() returning: %s", c.toString()));
 
 		return c;
+	}
+	
+	public void unregisterMatch(Match m) throws MatcherException { 
+		matcher.unregisterMatch(m);
 	}
 	
 	/**

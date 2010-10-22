@@ -50,6 +50,8 @@ public interface AdaptiveMatcher {
 	 * @throws MatcherException
 	 */
 	public Context registerMatch(Match m) throws MatcherException;
+	
+	public void unregisterMatch(Match m) throws MatcherException;
 
 	/**
 	 * Shuts down the Matcher.  Any underlying resources associated with the Matcher are released.
