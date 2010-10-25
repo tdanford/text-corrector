@@ -21,5 +21,13 @@ The rule-match is interpreted as a Java regular expression.
 
 The rule-rewrite is a double-quote delimited string ("...", again with escaped internal double quotes).  The rule-rewrite is interpreted as a literal string and replaces any occurrence of the rule-match within the target string. The one exception to this are strings of the form "$N", where N is any digit; these are replaced with the matched groups from the rule-match regexp.  (Escaped dollar-signs, "\$", are interpreted as literal "$" in the output, without group matching.) 
 
+Contextual Annotation Cache
+===========================
+
+Attempting to reduce the workload required by repetitive annotation tasks by using a caching middle layer.  
+
+Documentation page: 
+
+  http://neurocommons.org/page/Semantic_resources_project/Contextual_Annotation_Cache
 
 
