@@ -51,6 +51,11 @@ public interface AdaptiveMatcher {
 	 */
 	public Context registerMatch(Match m) throws MatcherException;
 	
+	/**
+	 * 
+	 * @param m
+	 * @throws MatcherException
+	 */
 	public void unregisterMatch(Match m) throws MatcherException;
 
 	/**
