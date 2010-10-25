@@ -2,13 +2,16 @@
     <description>
     </description>
 
-	<property name="src" location="src"/>
+	<property name="mainsrc" location="src/main"/>
+	<property name="testsrc" location="src/test"/>
+	<property name="src" value="${mainsrc}"/>
 	<property name="build" location="build"/>
 	<property name="dist" location="dist"/>
 	<property name="docs" location="${dist}/docs" />
 	<property name="lib"  location="lib"/>
 	<property name="rules"  location="rules"/>
 	<property name="project" value="text-corrector"/>
+	<property name="latestjar" location="${dist}/lib/${project}.jar" />
 
 	<target name="init">
 		<tstamp/>
@@ -29,9 +32,9 @@
 		</javadoc>
 	</target>
   
-	<target name="build" depends="init" description="compiles the source" >
+	<target name="buildmain" depends="init" description="compiles the program source" >
 		<javac destdir="${build}" includeantruntime="false">
-			<src path="${src}" />
+			<src path="${mainsrc}" />
 			<classpath>
 				<fileset dir="${lib}">
 					<include name="**/*.jar"/>
@@ -40,10 +43,24 @@
 		</javac> 
 	</target>
 
+	<target name="buildtest" depends="buildmain" description="compiles the test source" >
+		<javac destdir="${build}" includeantruntime="false">
+			<src path="${testsrc}" />
+			<classpath>
+				<fileset dir="${lib}">
+					<include name="**/*.jar"/>
+				</fileset>
+			</classpath>
+		</javac> 
+	</target>
+
+	<target name="build" depends="buildmain,buildtest" description="compiles all the source" />
+
 	<target name="jar" depends="build" description="generate the jar file" >
 		<mkdir dir="${dist}/lib"/>
+		<property name="jarpath" location="${dist}/lib/${project}-${DSTAMP}.jar" />
 
-		<jar destfile="${dist}/lib/${project}-${DSTAMP}.jar">
+		<jar destfile="${jarpath}">
 			<fileset dir="${build}/" />
 			<restrict>
 				<name name="**/*.class"/>
@@ -57,6 +74,7 @@
 				<!-- <attribute name="Main-Class" value="MAIN-CLASS"/> -->
 			</manifest>
 		</jar>
+		<copy file="${jarpath}" tofile="${latestjar}" />
 	</target>
 
 	<target name="clean" description="clean up" >
