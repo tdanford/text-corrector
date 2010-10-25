@@ -14,15 +14,27 @@ import org.sc.annotator.adaptive.exceptions.MatcherException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Implements an AdaptiveMatcher by keeping an in-memory data structure.  
+ * 
+ * This is the core implementation of the adaptive matcher -- other implementations (such as 
+ * {@link SimpleFileAdaptiveMatcher}) are implemented as wrappers around this class.
+ * 
+ * @author Timothy Danford
+ * @date   October, 2010
+ */
 public class SimpleInMemoryAdaptiveMatcher implements AdaptiveMatcher {
 	
 	private Map<String,Set<Match>> matches;
 	
 	private Logger logger;
+	private boolean isGeneralizing, isSimplifying;
 	
 	public SimpleInMemoryAdaptiveMatcher(Logger logger) {
 		this.logger = logger;
 		matches = new TreeMap<String,Set<Match>>();
+		isGeneralizing = false;
+		isSimplifying = true;
 	}
 	
 	public SimpleInMemoryAdaptiveMatcher() { 
@@ -42,29 +54,51 @@ public class SimpleInMemoryAdaptiveMatcher implements AdaptiveMatcher {
 		matches.clear();
 	}
 	
+	/**
+	 * @inheritDoc
+	 */
 	public void unregisterMatch(Match m) throws MatcherException { 
 		String source = m.value();
 		Context ctxt = m.context();
-		
+	
 		if(matches.containsKey(source)) { 
+			
 			Set<Match> ms = matches.get(source);
 			Iterator<Match> itr = ms.iterator();
 			int found = 0, removed = 0;
 			
+			// For each match with the same source string...
 			while(itr.hasNext()) { 
+
 				Match extant = itr.next();
 				Context extC = extant.context();
-				if(extC.isSubContext(ctxt)) { 
+				
+				// ... remove the match from the cache if it has a 'relevant' Context.
+				// Note that identical context are *always* relevant, while sub-contexts 
+				// are relevant iff the matcher is "simplifying."
+				if(extC.isSubContext(ctxt) || 
+					(isSimplifying && extC.isSubContext(ctxt))) { 
+					
 					itr.remove();
 					removed += 1;
 				}
+				
 				found += 1;
 			}
 			
-			if(found==0) { 
-				throw new MatcherException(String.format("No source string \"%s\" in context %s",
-						source, ctxt.toString()));
+			if(found==0) {
+				// This is only triggered if the matches Map contains an empty set.
+				throw new MatcherException(String.format("No matches for source string \"%s\"", 
+						source));
 			}
+			
+			logger.info(String.format("unregisterMatch: found %d matches, removed %d", found, removed));
+	
+			// finally, prune any empty sets.
+			if(ms.isEmpty()) { 
+				matches.remove(source);
+			}
+			
 		} else { 
 			throw new MatcherException(String.format("No source string \"%s\"",
 					source));
@@ -100,18 +134,24 @@ public class SimpleInMemoryAdaptiveMatcher implements AdaptiveMatcher {
 		
 		LinkedList<Match> ms = new LinkedList<Match>();
 		
+		// We look *in* the given block-text, for corresponding pieces of source text.
 		for(String k : matches.keySet()) { 
 			
 			if(blockText.contains(k)) {
 
-				for(Match m : matches.get(k)) { 
+				for(Match m : matches.get(k)) {
+					
+					Context mctxt = m.context();
 
-					if(c.isSubContext(m.context())) { 
+					// Exact matches are always returned.
+					// Sub-context matches are returned iff we are a "simplifying" matcher.
+					if(c.equals(mctxt) 
+							|| (isSimplifying && c.isSubContext(mctxt))
+						) { 
 
 						logger.info(String.format("Found Match %s", m.toString()));
 
-						ms.add(m);
-						
+						ms.add(m);				
 					}
 				}
 			}
