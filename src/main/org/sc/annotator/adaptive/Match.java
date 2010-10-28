@@ -2,15 +2,15 @@ package org.sc.annotator.adaptive;
 
 import java.util.Collection;
 
-public class Match {
+public class Match implements Comparable<Match> {
 	
-	public static Context lubContext(Collection<Match> ms) { 
+	public static Context lubContext(Collection<Context> ms) { 
 		Context c = null;
-		for(Match m : ms) { 
+		for(Context m : ms) { 
 			if(c == null) { 
-				c = m.context();
+				c = m;
 			} else { 
-				c = c.leastUpperBound(m.context());
+				c = c.leastUpperBound(m);
 			}
 		}
 		return c;
@@ -32,6 +32,19 @@ public class Match {
 		value = m.value;
 	}
 	
+	public int compareTo(Match m) { 
+		int c = match.compareTo(m.match);
+		if(c != 0) { return c; }
+
+		c = value.compareTo(m.value);
+		if(c != 0) { return c; }
+		
+		c = context.compareTo(m.context);
+		if(c != 0) { return c; }
+		
+		return 0;
+	}
+	
 	public Context context() { return context; }
 	public String match() { return match; }
 	public String value() { return value; }
@@ -45,7 +58,7 @@ public class Match {
 		int code = 17;
 		code += context.hashCode(); code *= 37;
 		code += match.hashCode(); code *= 37;
-		//code += value.hashCode(); code *= 37;
+		code += value.hashCode(); code *= 37;
 		return code;
 	}
 	
@@ -54,7 +67,7 @@ public class Match {
 		Match m = (Match)o;
 		return context.equals(m.context) 
 			&& match.equals(m.match) 
-			//&& value.equals(m.value)
+			&& value.equals(m.value)
 			;
 	}
 }
