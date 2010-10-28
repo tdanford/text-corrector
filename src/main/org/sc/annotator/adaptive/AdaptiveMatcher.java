@@ -64,5 +64,7 @@ public interface AdaptiveMatcher {
 	 * @throws MatcherCloseException
 	 */
 	public void close() throws MatcherCloseException;
+	
+	public void reset() throws MatcherException;
 }
 
