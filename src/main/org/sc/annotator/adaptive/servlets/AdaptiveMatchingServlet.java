@@ -133,36 +133,44 @@ public class AdaptiveMatchingServlet extends HttpServlet {
 	}
 
 	protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		String text = request.getParameter("text");
-		if(text == null) { 
-			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No 'text' parameter supplied.");
-			return;
-		}
-		String context = request.getParameter("context");
-		if(context == null) { 
-			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No 'context' parameter supplied.");
-			return;
-		}
-		String value = request.getParameter("value");
-		if(value == null) { 
-			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No 'value' parameter supplied.");
-			return;
-		}
-
-		text = URLDecoder.decode(text, "UTF-8");
-		context = URLDecoder.decode(context, "UTF-8");
-		value = URLDecoder.decode(value, "UTF-8");
 		
-		logger.info(String.format("POST: text=\"%s\",context=\"%s\",value=\"%s\"", text, context, value));
-
-		Match m = new Match(new Context(context), text, value);
-
 		try { 
+			String operation = request.getParameter("op");
+			if(operation != null && operation.equals("clear")) { 
+				matcher.reset();
+				response.setStatus(HttpServletResponse.SC_ACCEPTED);
+				return;
+			}
+
+			String text = request.getParameter("text");
+			if(text == null) { 
+				response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No 'text' parameter supplied.");
+				return;
+			}
+			String context = request.getParameter("context");
+			if(context == null) { 
+				response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No 'context' parameter supplied.");
+				return;
+			}
+			String value = request.getParameter("value");
+			if(value == null) { 
+				response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No 'value' parameter supplied.");
+				return;
+			}
+
+			text = URLDecoder.decode(text, "UTF-8");
+			context = URLDecoder.decode(context, "UTF-8");
+			value = URLDecoder.decode(value, "UTF-8");
+
+			logger.info(String.format("POST: text=\"%s\",context=\"%s\",value=\"%s\"", text, context, value));
+
+			Match m = new Match(new Context(context), text, value);
+
 			matcher.unregisterMatch(m);
-			
+
 			logger.info(String.format("doDelete() : %s,%s,%s", text, value, context.toString()));
 
-			response.setStatus(HttpServletResponse.SC_OK);
+			response.setStatus(HttpServletResponse.SC_ACCEPTED);
 
 		} catch(MatcherException e) { 
 

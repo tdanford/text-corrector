@@ -4,6 +4,8 @@ import java.net.*;
 import java.util.*;
 import java.io.*;
 
+import javax.servlet.http.HttpServletResponse;
+
 import org.sc.annotator.adaptive.AdaptiveMatcher;
 import org.sc.annotator.adaptive.Context;
 import org.sc.annotator.adaptive.Match;
@@ -77,7 +79,7 @@ public class WebClient implements AdaptiveMatcher {
 			cxn.connect();
 			
 			int status = cxn.getResponseCode();
-			if(status == 200) { 
+			if(status == HttpServletResponse.SC_ACCEPTED) { 
 				// do nothing.
 				
 			} else { 
@@ -144,5 +146,33 @@ public class WebClient implements AdaptiveMatcher {
 	}
 
 	public void close() throws MatcherCloseException {
+	}
+
+	public void reset() throws MatcherException {
+		try {
+			URL url = new URL(base + "?op=clear");
+
+			HttpURLConnection cxn = (HttpURLConnection)url.openConnection();
+			cxn.setRequestMethod("DELETE");
+			cxn.connect();
+
+			int status = cxn.getResponseCode();
+			if(status == HttpServletResponse.SC_ACCEPTED) { 
+				// do nothing.
+
+			} else { 
+				String msg = String.format("%d : %s", status, cxn.getResponseMessage());
+				throw new MatcherException(msg);
+			}
+
+		} catch (MalformedURLException e) {
+			throw new IllegalArgumentException(e);
+
+		} catch (UnsupportedEncodingException e) {
+			throw new IllegalStateException(e);
+
+		} catch (IOException e) {
+			throw new MatcherException(e);
+		}		
 	}
 }
