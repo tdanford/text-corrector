@@ -6,6 +6,10 @@ public class Context implements Comparable<Context> {
 
 	private String[] address;
 	
+	public Context() { 
+		address = new String[0];
+	}
+	
 	public Context(String str) { 
 		this(str.split("\\s+"));
 	}
@@ -17,6 +21,14 @@ public class Context implements Comparable<Context> {
 				throw new IllegalArgumentException(String.valueOf(Arrays.asList(a)));
 			}
 		}
+	}
+	
+	public Context(Context c, String a) { 
+		address = new String[c.address.length+1];
+		for(int i = 0; i < c.address.length; i++) { 
+			address[i] = c.address[i];
+		}
+		address[c.address.length] = a;
 	}
 	
 	public boolean isTopContext() { return address.length==0; }
