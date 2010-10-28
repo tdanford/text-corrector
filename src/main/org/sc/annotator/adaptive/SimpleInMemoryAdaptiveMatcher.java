@@ -8,6 +8,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import org.sc.annotator.adaptive.exceptions.MatcherCloseException;
 import org.sc.annotator.adaptive.exceptions.MatcherException;
@@ -25,15 +26,15 @@ import org.slf4j.LoggerFactory;
  */
 public class SimpleInMemoryAdaptiveMatcher implements AdaptiveMatcher {
 	
-	private Map<String,Set<Match>> matches;
+	private Map<String,Map<String,TreeSet<Context>>> matches;
 	
 	private Logger logger;
 	private boolean isGeneralizing, isSimplifying;
 	
 	public SimpleInMemoryAdaptiveMatcher(Logger logger) {
 		this.logger = logger;
-		matches = new TreeMap<String,Set<Match>>();
-		isGeneralizing = false;
+		matches = new TreeMap<String,Map<String,TreeSet<Context>>>();
+		isGeneralizing = true;
 		isSimplifying = true;
 	}
 	
@@ -46,7 +47,7 @@ public class SimpleInMemoryAdaptiveMatcher implements AdaptiveMatcher {
 	 * 
 	 * @return
 	 */
-	Map<String,Set<Match>> getMatches() { 
+	Map<String,Map<String,TreeSet<Context>>> getMatches() { 
 		return matches;
 	}
 	
@@ -54,24 +55,28 @@ public class SimpleInMemoryAdaptiveMatcher implements AdaptiveMatcher {
 		matches.clear();
 	}
 	
+	public void reset() throws MatcherException { 
+		clear();
+	}
+	
 	/**
 	 * @inheritDoc
 	 */
 	public void unregisterMatch(Match m) throws MatcherException { 
-		String source = m.value();
+		String source = m.match();
+		String target = m.value();
 		Context ctxt = m.context();
 	
-		if(matches.containsKey(source)) { 
+		if(matches.containsKey(source) && matches.get(source).containsKey(target)) { 
 			
-			Set<Match> ms = matches.get(source);
-			Iterator<Match> itr = ms.iterator();
+			Set<Context> ms = matches.get(source).get(target);
+			Iterator<Context> itr = ms.iterator();
 			int found = 0, removed = 0;
 			
 			// For each match with the same source string...
 			while(itr.hasNext()) { 
 
-				Match extant = itr.next();
-				Context extC = extant.context();
+				Context extC = itr.next();
 				
 				// ... remove the match from the cache if it has a 'relevant' Context.
 				// Note that identical context are *always* relevant, while sub-contexts 
@@ -95,7 +100,11 @@ public class SimpleInMemoryAdaptiveMatcher implements AdaptiveMatcher {
 			logger.info(String.format("unregisterMatch: found %d matches, removed %d", found, removed));
 	
 			// finally, prune any empty sets.
-			if(ms.isEmpty()) { 
+			if(matches.get(source).get(target).isEmpty()) { 
+				matches.get(source).remove(target);
+			}
+			
+			if(matches.get(source).isEmpty()) { 
 				matches.remove(source);
 			}
 			
@@ -107,22 +116,22 @@ public class SimpleInMemoryAdaptiveMatcher implements AdaptiveMatcher {
 	
 	public void addMatch(Match m) { 
 		if(!matches.containsKey(m.match())) { 
-			matches.put(m.match(), new LinkedHashSet<Match>());
+			matches.put(m.match(), new TreeMap<String,TreeSet<Context>>());
 		}
-		matches.get(m.match()).add(m);
+		if(!matches.get(m.match()).containsKey(m.value())) { 
+			matches.get(m.match()).put(m.value(), new TreeSet<Context>());
+		}
+		matches.get(m.match()).get(m.value()).add(m.context());
 		logger.info(String.format("Added: %s", m.toString()));			
 	}
 	
-	public void removeMatch(Match m) { 
-		matches.get(m.match()).remove(m);
-		if(matches.get(m.match()).isEmpty()) { 
-			matches.remove(m.match());
+	public void removeMatches(String source, String target, Collection<Context> ms) { 
+		matches.get(source).get(target).removeAll(ms);
+		if(matches.get(source).get(target).isEmpty()) { 
+			matches.get(source).remove(target);
 		}
-	}
-	
-	public void removeMatches(Collection<Match> ms) { 
-		for(Match m : ms) { 
-			removeMatch(m);
+		if(matches.get(source).isEmpty()) { 
+			matches.remove(source);
 		}
 	}
 
@@ -136,22 +145,25 @@ public class SimpleInMemoryAdaptiveMatcher implements AdaptiveMatcher {
 		
 		// We look *in* the given block-text, for corresponding pieces of source text.
 		for(String k : matches.keySet()) { 
-			
+
 			if(blockText.contains(k)) {
 
-				for(Match m : matches.get(k)) {
-					
-					Context mctxt = m.context();
+				for(String target : matches.get(k).keySet()) { 
 
-					// Exact matches are always returned.
-					// Sub-context matches are returned iff we are a "simplifying" matcher.
-					if(c.equals(mctxt) 
-							|| (isSimplifying && c.isSubContext(mctxt))
-						) { 
+					for(Context mctxt : matches.get(k).get(target)) {
 
-						logger.info(String.format("Found Match %s", m.toString()));
+						// Exact matches are always returned.
+						// Sub-context matches are returned iff we are a "simplifying" matcher.
+						if(c.equals(mctxt) 
+								|| (isSimplifying && c.isSubContext(mctxt))
+							) { 
+							
+							Match m = new Match(mctxt, k, target);
 
-						ms.add(m);				
+							logger.info(String.format("Found Match %s", m.toString()));
+
+							ms.add(m);				
+						}
 					}
 				}
 			}
@@ -166,66 +178,72 @@ public class SimpleInMemoryAdaptiveMatcher implements AdaptiveMatcher {
 	public Context registerMatch(Match m) {
 		logger.info(String.format("registerMatch(%s)", m.toString()));
 		
-		String matchText = m.match();
+		String source = m.match();
+		String target = m.value();
 		
-		Iterator<Match> itr = matches.containsKey(matchText) ? 
-				matches.get(matchText).iterator() : 
-				new EmptyIterator<Match>();
+		if(!matches.containsKey(source) || !matches.get(source).containsKey(target)) {
+			addMatch(m);
+			return m.context();
+		}
+
+		Iterator<Context> itr =  
+				matches.get(source).get(target).iterator();
 		
-		Match superMatch = null;
-		Set<Match> subMatches = new HashSet<Match>();
-		Set<Match> generalizable = new HashSet<Match>();
-		
+		Context superMatch = null;
+		Set<Context> subMatches = new HashSet<Context>();
+		Set<Context> generalizable = new HashSet<Context>();
+
 		while(itr.hasNext()) { 
-			Match extant = itr.next();
-			
-			if(extant.value().equals(m.value())) { 
+			Context extant = itr.next();
 
-				if(m.context().isSubContext(extant.context())) {
 
-					assert superMatch == null;
+			if(m.context().isSubContext(extant)) {
 
-					superMatch = extant;
-					
-				} else if (extant.context().isSubContext(m.context())) {
-					
-					assert superMatch == null;
-			
-					subMatches.add(extant);
-					
-				} else {
-					
-					generalizable.add(extant);
-				}
+				// this is the simple case... our new match context is subsumed by 
+				// a context for a match already in the database.
+
+				assert superMatch == null;
+
+				superMatch = extant;
+
+			} else if (extant.isSubContext(m.context())) {
+
+				assert superMatch == null;
+
+				subMatches.add(extant);
+
+			} else {
+
+				generalizable.add(extant);
 			}
 		}
 		
 		if(superMatch != null) {
 			
 			assert subMatches.isEmpty();
-			assert generalizable.isEmpty();
+			//assert generalizable.isEmpty();
 
 			m = null;  // don't add anything.
 			
-			return superMatch.context();
+			return superMatch;
 			
 		} else { 
 
-			removeMatches(subMatches);
+			removeMatches(source, target, subMatches);
 			
 			Context superCtxt = lub(m, generalizable);
 
-			if(!superCtxt.isTopContext() && !generalizable.isEmpty()) { 
+			if(isGeneralizing && !superCtxt.isTopContext() && !generalizable.isEmpty()) { 
 				boolean isImmediateParent = superCtxt.isParentOf(m.context());
 			
-				Iterator<Match> gitr = generalizable.iterator();
+				Iterator<Context> gitr = generalizable.iterator();
 				while(!isImmediateParent && itr.hasNext()) { 
-					isImmediateParent = isImmediateParent || superCtxt.isParentOf(gitr.next().context());
+					isImmediateParent = isImmediateParent || superCtxt.isParentOf(gitr.next());
 				}
 				
 				if(isImmediateParent) { 
 					m = new Match(superCtxt, m.match(), m.value());
-					removeMatches(generalizable);
+					removeMatches(source, target, generalizable);
 				}
 			}
 
@@ -236,7 +254,7 @@ public class SimpleInMemoryAdaptiveMatcher implements AdaptiveMatcher {
 		
 	}
 	
-	private Context lub(Match m, Collection<Match> ms) { 
+	private Context lub(Match m, Collection<Context> ms) { 
 		Context c = Match.lubContext(ms);
 		return c != null ? c.leastUpperBound(m.context()) : m.context();
 	}

@@ -7,6 +7,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import java.io.*;
 
@@ -105,13 +106,15 @@ public class SimpleFileAdaptiveMatcher implements AdaptiveMatcher {
 	 * @param writer
 	 */
 	public void save(PrintWriter writer) {
-		Map<String,Set<Match>> matches = matcher.getMatches();
-		for(String match : matches.keySet()) { 
-			for(Match m : matches.get(match)) { 
-				writer.println(String.format("%s\t%s\t%s", 
-						m.match(),
-						m.value(),
-						m.context().toString()));
+		Map<String,Map<String,TreeSet<Context>>> matches = matcher.getMatches();
+		for(String source : matches.keySet()) {
+			for(String target : matches.get(source).keySet()) { 
+				for(Context m : matches.get(source).get(target)) { 
+					writer.println(String.format("%s\t%s\t%s", 
+							source,
+							target,
+							m.toString()));
+				}
 			}
 		}
 	}
@@ -131,6 +134,13 @@ public class SimpleFileAdaptiveMatcher implements AdaptiveMatcher {
 			
 		} finally { 
 			writer.close();
+		}
+	}
+
+	public void reset() throws MatcherException {
+		matcher.reset();
+		if(backingFile.exists()) { 
+			backingFile.delete();
 		}
 	} 
 	
